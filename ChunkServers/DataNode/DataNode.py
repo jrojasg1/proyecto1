@@ -1,7 +1,7 @@
 import grpc
 from concurrent import futures
 import sys
-sys.path.append('../../Proto')  # Agrega la ruta al directorio que contiene el módulo generado
+sys.path.append('../../Proto/ServiceClient')
 import Service_pb2
 import Service_pb2_grpc
 
@@ -14,8 +14,9 @@ class Datanode(Service_pb2_grpc.DatanodeServiceServicer):
         file_id = request.file_id
         data = request.data
         self.data_store[file_id] = data
-        response = Service_pb2.WriteResponse(success = 1)
+        response = Service_pb2.WriteResponse(success = True)
         print("Sending WriteResponse:", response)
+        print("Data Store:", self.data_store)
         return response
 
     def ReadData(self, request, context):
