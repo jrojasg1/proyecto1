@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+message Block {
+    int32 block_id = 1;
+    bytes data = 2;
+}
+
+message BlockLocation {
+    int32 block_id = 1;
+    repeated string datanodes = 2;
+}
+
+service NameNodeService {
+    rpc GetBlockLocations(GetBlockLocationsRequest) returns (GetBlockLocationsResponse);
+}
+
+message GetBlockLocationsRequest {
+    int32 block_id = 1;
+}
+
+message GetBlockLocationsResponse {
+    repeated BlockLocation block_locations = 1;
+}
