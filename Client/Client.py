@@ -61,7 +61,7 @@ def main():
         datanode_id = datanode_info["id"]
         datanode_address = datanode_info["address"]
         print(f"DataNode seleccionado: ID {datanode_id}, Dirección {datanode_address}")
-        # Aquí podrías utilizar la información del DataNode para guardar los bloques
+       
     else:
         print("No se pudo obtener información del DataNode del servidor NameNode")
 
