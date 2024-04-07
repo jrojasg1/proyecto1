@@ -5,18 +5,15 @@ from flask import Flask, jsonify
 
 app = Flask(__name__)
 
-# Cargar la configuración de los DataNodes desde el archivo JSON
 def load_datanodes_config(config_file):
     with open(config_file) as f:
         config = json.load(f)
     return config["datanodes"]
 
-# Obtener información de un DataNode específico
 @app.route('/datanodes', methods=['GET'])
 def get_datanode_info():
     datanodes = load_datanodes_config("datanodes.json")
     if datanodes:
-        # En este ejemplo, simplemente se devuelve el primer DataNode de la lista
         return jsonify(datanodes[1])
     else:
         return jsonify({"error": "No hay DataNodes disponibles"}), 404
