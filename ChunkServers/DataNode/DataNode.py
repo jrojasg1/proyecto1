@@ -2,6 +2,7 @@ import json
 import grpc
 from concurrent import futures
 import sys
+import os
 sys.path.append('../../Proto/ServiceClient')
 import Service_pb2
 import Service_pb2_grpc
@@ -29,24 +30,30 @@ class ChunkServer(Service_pb2_grpc.ChunkServerServiceServicer):
         server.wait_for_termination()
 
 class DataNode(Service_pb2_grpc.DatanodeServiceServicer):
-    def __init__(self, data_node_id, address):
+    def __init__(self, data_node_id, address,storage_path):
         self.data_node_id = data_node_id
         self.address = address
+        self.storage_path = storage_path
         self.data_store = {}
 
     def WriteData(self, request, context):
         print("Received WriteRequest:", request)
         file_id = request.file_id
         data = request.data
-        self.data_store[file_id] = data
+        
+        # Guardar el archivo en el sistema de archivos local
+        file_path = os.path.join(self.storage_path, f"{file_id}")
+        with open(file_path, 'wb') as f:
+            f.write(data)
+        
         response = Service_pb2.WriteResponse(success=True)
         print("Sending WriteResponse:", response)
-        print("Data Store:", self.data_store)
         return response
 
     def ReadData(self, request, context):
         print("Received ReadRequest:", request)
         file_id = request.file_id
+        print("data store:", self.data_store)
         if file_id in self.data_store:
             data = self.data_store[file_id]
             response = Service_pb2.ReadResponse(data=data, success=True)
@@ -71,9 +78,11 @@ def load_datanodes_config(config_file):
     return datanodes
 
 def serve():
-    data_nodes = load_datanodes_config("DataNodes.json")
-    chunk_server = ChunkServer(data_nodes)
-    chunk_server.serve(50052)
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    Service_pb2_grpc.add_DatanodeServiceServicer_to_server(DataNode(1,'localhost','../DataNode'), server)
+    server.add_insecure_port('[::]:50052')
+    server.start()
+    server.wait_for_termination()
 
 if __name__ == '__main__':
     serve()
