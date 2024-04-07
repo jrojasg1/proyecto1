@@ -1,6 +1,8 @@
 import json
 import grpc
 from concurrent import futures
+import sys
+sys.path.append('../../Proto/ServiceClient')
 import Service_pb2
 import Service_pb2_grpc
 
