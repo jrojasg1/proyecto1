@@ -1,3 +1,4 @@
+import grpc
 import json
 from flask import Flask, jsonify
 #import namenode_pb2
@@ -31,4 +32,4 @@ def handle_num_chunks():
     return jsonify({'datanode_id': datanode_id})
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    serve()

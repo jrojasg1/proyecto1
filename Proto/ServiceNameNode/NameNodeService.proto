@@ -1,19 +1,15 @@
 syntax = "proto3";
 
-message WriteBlockRequest {
-    int32 block_id = 1;
-    int32 chunk_index = 2;
-    bytes data = 3;
+service NameNodeService {
+  rpc GetDatanodesConfig(Empty) returns (DatanodesConfig);
 }
 
-message WriteBlockResponse {
-    bool success = 1;
+message DatanodeInfo {
+  int32 id = 1;
+  int32 chunk_id = 3;
+  string address = 2;
 }
 
-message GetBlockLocationsRequest {
-    int32 block_id = 1;
-}
-
-message GetBlockLocationsResponse {
-    repeated string datanodes = 1;
+message DatanodesConfig {
+  repeated DatanodeInfo datanodes = 1;
 }
