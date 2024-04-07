@@ -1,4 +1,3 @@
-import grpc
 import json
 from flask import Flask, jsonify
 #import namenode_pb2
@@ -18,6 +17,7 @@ def get_datanode_info():
         return jsonify(datanodes[1])
     else:
         return jsonify({"error": "No hay DataNodes disponibles"}), 404
+    
 @app.route('/num_chunks', methods=['POST'])
 def handle_num_chunks():
     data = request.json
@@ -32,4 +32,4 @@ def handle_num_chunks():
     return jsonify({'datanode_id': datanode_id})
 
 if __name__ == '__main__':
-    serve()
+    app.run(debug=True)
