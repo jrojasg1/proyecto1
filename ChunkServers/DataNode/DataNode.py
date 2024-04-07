@@ -1,4 +1,3 @@
-import json
 import grpc
 from concurrent import futures
 import sys
@@ -29,8 +28,9 @@ class ChunkServer(Service_pb2_grpc.ChunkServerServiceServicer):
         server.wait_for_termination()
 
 class DataNode(Service_pb2_grpc.DatanodeServiceServicer):
-    def __init__(self, data_node_id, address):
+    def __init__(self, data_node_id, chunk_id, address):
         self.data_node_id = data_node_id
+        self.chunk_id = chunk_id  # Se añade el identificador del chunk
         self.address = address
         self.data_store = {}
 
@@ -57,21 +57,25 @@ class DataNode(Service_pb2_grpc.DatanodeServiceServicer):
 
     def ReceiveData(self, data):
         # Método para recibir datos de otros DataNodes
-        print(f"Data received at {self.address}: {data}")
+        print(f"Data received at {self.address} (Chunk {self.chunk_id}): {data}")
         return True
 
-def load_datanodes_config(config_file):
-    with open(config_file) as f:
-        config = json.load(f)
+def load_datanodes_config(name_node_address):
+    channel = grpc.insecure_channel(name_node_address)
+    stub = Service_pb2_grpc.NameNodeServiceStub(channel)
+    response = stub.GetDatanodesConfig(Service_pb2.Empty())
+    
     datanodes = {}
-    for datanode_info in config["datanodes"]:
-        data_node_id = datanode_info["id"]
-        address = datanode_info["address"]
-        datanodes[address] = DataNode(data_node_id, address)
+    for chunk_info in response.datanodes:
+        for datanode_info in chunk_info.datanodes:
+            data_node_id = datanode_info.id
+            address = datanode_info.address
+            chunk_id = chunk_info.id
+            datanodes[address] = DataNode(data_node_id, chunk_id, address)
     return datanodes
 
-def serve():
-    data_nodes = load_datanodes_config("DataNodes.json")
+def serve(name_node_address):
+    data_nodes = load_datanodes_config(name_node_address)
     chunk_server = ChunkServer(data_nodes)
     chunk_server.serve(50052)
 

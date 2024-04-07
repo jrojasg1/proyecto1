@@ -1,37 +1,32 @@
+import grpc
 import json
-from flask import Flask, jsonify
-#import namenode_pb2
-#import namenode_pb2_grpc
+import sys
+sys.path.append('../../Proto/ServiceNameNode')
+import NameNodeService_pb2
+import NameNodeService_pb2_grpc
 
-app = Flask(__name__)
+class NameNode(NameNodeService_pb2_grpc.NameNodeServiceServicer):
+    def __init__(self, config_file):
+        self.config_file = config_file
 
-# Cargar la configuración de los DataNodes desde el archivo JSON
-def load_datanodes_config(config_file):
-    with open(config_file) as f:
-        config = json.load(f)
-    return config["datanodes"]
+    def GetDatanodesConfig(self, request, context):
+        with open(self.config_file) as f:
+            config = json.load(f)
 
-# Obtener información de un DataNode específico
-@app.route('/datanodes', methods=['GET'])
-def get_datanode_info():
-    datanodes = load_datanodes_config("datanodes.json")
-    if datanodes:
-        # En este ejemplo, simplemente se devuelve el primer DataNode de la lista
-        return jsonify(datanodes[0])
-    else:
-        return jsonify({"error": "No hay DataNodes disponibles"}), 404
-@app.route('/num_chunks', methods=['POST'])
-def handle_num_chunks():
-    data = request.json
-    filename = data.get('filename')
-    chunk_index = data.get('chunk_index')
-    num_chunks = data.get('num_chunks')
+        datanodes_config = NameNodeService_pb2.DatanodesConfig()
+        for datanode_info in config["datanodes"]:
+            datanode = datanodes_config.datanodes.add()
+            datanode.id = datanode_info["id"]
+            datanode.address = datanode_info["address"]
 
-    #DataNode guardar el chunk
-    
-    datanode_id = 1
+        return datanodes_config
 
-    return jsonify({'datanode_id': datanode_id})
+def serve():
+    server = grpc.server(grpc.ThreadPoolExecutor(max_workers=10))
+    NameNodeService_pb2_grpc.add_NameNodeServiceServicer_to_server(NameNode("DataNodes.json"), server)
+    server.add_insecure_port('[::]:50051')
+    server.start()
+    server.wait_for_termination()
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    serve()
