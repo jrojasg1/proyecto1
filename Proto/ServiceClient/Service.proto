@@ -5,6 +5,10 @@ service DatanodeService {
   rpc ReadData(ReadRequest) returns (ReadResponse);
 }
 
+service ChunkServerService {
+  rpc SendData(SendDataRequest) returns (SendDataResponse);
+}
+
 message WriteRequest {
   string file_id = 1;
   bytes data = 2;
@@ -24,4 +28,13 @@ message ReadRequest {
 message ReadResponse {
   bytes data = 1;
   bool success = 2;
+}
+
+message SendDataRequest {
+  string destination_address = 1;
+  bytes data = 2;
+}
+
+message SendDataResponse {
+  bool success = 1;
 }
