@@ -14,10 +14,12 @@ class NameNode(NameNodeService_pb2_grpc.NameNodeServiceServicer):
             config = json.load(f)
 
         datanodes_config = NameNodeService_pb2.DatanodesConfig()
-        for datanode_info in config["datanodes"]:
-            datanode = datanodes_config.datanodes.add()
-            datanode.id = datanode_info["id"]
-            datanode.address = datanode_info["address"]
+        for chunk_info in config["chunkservers"]:
+            for datanode_info in chunk_info["datanodes"]:
+                datanode = datanodes_config.datanodes.add()
+                datanode.id = datanode_info["id"]
+                datanode.address = datanode_info["address"]
+                datanode.chunk_id = chunk_info["id"]  # Se añade el identificador del chunk
 
         return datanodes_config
 
