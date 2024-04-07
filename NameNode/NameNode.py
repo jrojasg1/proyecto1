@@ -17,7 +17,7 @@ def get_datanode_info():
     datanodes = load_datanodes_config("datanodes.json")
     if datanodes:
         # En este ejemplo, simplemente se devuelve el primer DataNode de la lista
-        return jsonify(datanodes[0])
+        return jsonify(datanodes[1])
     else:
         return jsonify({"error": "No hay DataNodes disponibles"}), 404
 @app.route('/num_chunks', methods=['POST'])
