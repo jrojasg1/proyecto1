@@ -5,12 +5,14 @@ from typing import ClassVar as _ClassVar, Optional as _Optional
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class WriteRequest(_message.Message):
-    __slots__ = ("file_id", "data")
+    __slots__ = ("file_id", "chunk_id", "data")
     FILE_ID_FIELD_NUMBER: _ClassVar[int]
+    CHUNK_ID_FIELD_NUMBER: _ClassVar[int]
     DATA_FIELD_NUMBER: _ClassVar[int]
     file_id: str
+    chunk_id: int
     data: bytes
-    def __init__(self, file_id: _Optional[str] = ..., data: _Optional[bytes] = ...) -> None: ...
+    def __init__(self, file_id: _Optional[str] = ..., chunk_id: _Optional[int] = ..., data: _Optional[bytes] = ...) -> None: ...
 
 class WriteResponse(_message.Message):
     __slots__ = ("success", "fail")

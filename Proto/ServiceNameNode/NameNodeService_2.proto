@@ -1,23 +1,27 @@
 syntax = "proto3";
-
-message Block {
-    int32 block_id = 1;
-    bytes data = 2;
-}
-
-message BlockLocation {
-    int32 block_id = 1;
-    repeated string datanodes = 2;
-}
+import "google/protobuf/empty.proto";
 
 service NameNodeService {
-    rpc GetBlockLocations(GetBlockLocationsRequest) returns (GetBlockLocationsResponse);
+  rpc GetDatanodesConfig(google.protobuf.Empty) returns (DatanodesConfig);
+  rpc AddChunkInfo(ChunkInfo) returns (AddChunkInfoResponse); // Nuevo método para recibir información del chunk
 }
 
-message GetBlockLocationsRequest {
-    int32 block_id = 1;
+message DatanodeInfo {
+  int32 id = 1;
+  int32 chunk_id = 3;
+  string address = 2;
 }
 
-message GetBlockLocationsResponse {
-    repeated BlockLocation block_locations = 1;
+message DatanodesConfig {
+  repeated DatanodeInfo datanodes = 1;
+}
+
+// Nuevo mensaje para representar la información del chunk
+message ChunkInfo {
+  string file_id = 1;
+  string chunk_path = 2;
+}
+
+message AddChunkInfoResponse {
+  bool success = 1;
 }

@@ -14,21 +14,19 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x15NameNodeService.proto\"\'\n\x05\x42lock\x12\x10\n\x08\x62lock_id\x18\x01 \x01(\x05\x12\x0c\n\x04\x64\x61ta\x18\x02 \x01(\x0c\"4\n\rBlockLocation\x12\x10\n\x08\x62lock_id\x18\x01 \x01(\x05\x12\x11\n\tdatanodes\x18\x02 \x03(\t\",\n\x18GetBlockLocationsRequest\x12\x10\n\x08\x62lock_id\x18\x01 \x01(\x05\"D\n\x19GetBlockLocationsResponse\x12\'\n\x0f\x62lock_locations\x18\x01 \x03(\x0b\x32\x0e.BlockLocation2]\n\x0fNameNodeService\x12J\n\x11GetBlockLocations\x12\x19.GetBlockLocationsRequest\x1a\x1a.GetBlockLocationsResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x15NameNodeService.proto\"H\n\x11WriteBlockRequest\x12\x10\n\x08\x62lock_id\x18\x01 \x01(\x05\x12\x13\n\x0b\x63hunk_index\x18\x02 \x01(\x05\x12\x0c\n\x04\x64\x61ta\x18\x03 \x01(\x0c\"%\n\x12WriteBlockResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\",\n\x18GetBlockLocationsRequest\x12\x10\n\x08\x62lock_id\x18\x01 \x01(\x05\".\n\x19GetBlockLocationsResponse\x12\x11\n\tdatanodes\x18\x01 \x03(\tb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'NameNodeService_pb2', _globals)
 if _descriptor._USE_C_DESCRIPTORS == False:
   DESCRIPTOR._options = None
-  _globals['_BLOCK']._serialized_start=25
-  _globals['_BLOCK']._serialized_end=64
-  _globals['_BLOCKLOCATION']._serialized_start=66
-  _globals['_BLOCKLOCATION']._serialized_end=118
-  _globals['_GETBLOCKLOCATIONSREQUEST']._serialized_start=120
-  _globals['_GETBLOCKLOCATIONSREQUEST']._serialized_end=164
-  _globals['_GETBLOCKLOCATIONSRESPONSE']._serialized_start=166
-  _globals['_GETBLOCKLOCATIONSRESPONSE']._serialized_end=234
-  _globals['_NAMENODESERVICE']._serialized_start=236
-  _globals['_NAMENODESERVICE']._serialized_end=329
+  _globals['_WRITEBLOCKREQUEST']._serialized_start=25
+  _globals['_WRITEBLOCKREQUEST']._serialized_end=97
+  _globals['_WRITEBLOCKRESPONSE']._serialized_start=99
+  _globals['_WRITEBLOCKRESPONSE']._serialized_end=136
+  _globals['_GETBLOCKLOCATIONSREQUEST']._serialized_start=138
+  _globals['_GETBLOCKLOCATIONSREQUEST']._serialized_end=182
+  _globals['_GETBLOCKLOCATIONSRESPONSE']._serialized_start=184
+  _globals['_GETBLOCKLOCATIONSRESPONSE']._serialized_end=230
 # @@protoc_insertion_point(module_scope)
