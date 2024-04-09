@@ -26,8 +26,9 @@ class DataNode:
         self.storage_path = os.path.join(os.getcwd())
         self.namenode_address = namenode_address
 
+        # Iniciar el envío periódico del latido del nodo de datos
         heartbeat_thread = threading.Thread(target=self.send_heartbeat)
-        heartbeat_thread.daemon = True  
+        heartbeat_thread.daemon = True
         heartbeat_thread.start()
 
     def send_heartbeat(self):
@@ -38,20 +39,20 @@ class DataNode:
                 print('capacidad: ',capacity)
                 response = requests.post(f'http://{self.namenode_address}/heartbeat', json={
                     'id': self.datanode_id,
-                    'address':self.datanode_ip_address + ':' + str(datanode_port),
+                    'address':self.datanode_ip_address + ':' + str(self.datanode_port),
                     'capacity': capacity,
-                    'rack': 2})
+                    'rack':1})
                 if response.status_code == 200:
                     print("Heartbeat sent to NameNode.")
                 else:
                     print("Error sending heartbeat to NameNode.")
             except requests.exceptions.RequestException as e:
                 print(f"Connection error: {e}")
-            time.sleep(10) 
+            time.sleep(10)
 
     def get_capacity(self):
         total, used, free = shutil.disk_usage(self.storage_path)
-        return free
+        return free  
 
     def serve(self):
         server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
@@ -68,15 +69,14 @@ class DataNode:
         chunk_path = os.path.join(self.storage_path, f"{file_id}_chunk_{chunk_id}")
         with open(chunk_path, 'wb') as f:
             f.write(data)
-        
         response = Service_pb2.WriteResponse(success=True)
         print(f"Chunk {chunk_id} saved at {chunk_path}")
+        
         return response
 
     def ReadData(self, request, context):
         file_id = request.file_id
         chunk_id = request.chunk_id
-        
         chunk_path = os.path.join(self.storage_path, f"{file_id}_chunk_{chunk_id}")
         if os.path.exists(chunk_path):
             with open(chunk_path, 'rb') as f:
@@ -88,6 +88,7 @@ class DataNode:
             print(f"Chunk {chunk_id} not found")
         
         return response
+
 
 
 if __name__ == '__main__':
