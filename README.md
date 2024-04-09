@@ -2,6 +2,10 @@
 
 Este proyecto es una implementación de un sistema de archivos distribuido utilizando Python.
 
+## Arquitectura planteada
+![Arquitectura](arquitectura.png)
+
+
 ## Instrucciones de ejecución
 
 Para ejecutar este proyecto, sigue los pasos a continuación:
