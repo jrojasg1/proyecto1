@@ -1,0 +1,15 @@
+ess else None
+
+def get_datanode_address():
+    response = requests.get('http://localhost:5000/datanodes')
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return None
+
+def main():
+    # Get DataNode address from NameNode
+    datanode_info = get_datanode_address()
+    print('datanode_info: ', datanode_info )
+    if datanode_info:
+        datanode_id = datanode_in

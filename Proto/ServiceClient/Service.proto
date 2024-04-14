@@ -18,8 +18,7 @@ message WriteResponse {
 message ReadRequest {
   string file_id = 1;
   int32 chunk_id = 2;
-  int64 offset = 3;
-  int32 size = 4;
+  int32 size = 3;
 }
 
 message ReadResponse {

@@ -51,7 +51,7 @@ def get_datanode_address():
     else:
         return None
     
-def read_chunk_from_datanode(datanode_address, file_id, chunk_id, offset, size):
+def read_chunk_from_datanode(datanode_address, file_id, chunk_id, size):
     try:
         # Conectar al DataNode
         channel = grpc.insecure_channel(datanode_address)
@@ -61,7 +61,6 @@ def read_chunk_from_datanode(datanode_address, file_id, chunk_id, offset, size):
         read_request = Service_pb2.ReadRequest(
             file_id=file_id,
             chunk_id=chunk_id,
-            offset=offset,
             size=size
         )
 
@@ -130,11 +129,10 @@ def main():
             print("No se pudo obtener información del DataNode del servidor NameNode")
             return
         chunk_id = 0  # ID del chunk
-        offset = 0  # Offset inicial
         size = CHUNK_SIZE  # Tamaño de los datos a leer
 
         # Llamar a la función para leer el chunk del DataNode
-        chunk_data = read_chunk_from_datanode(datanode_address, file_id, chunk_id, offset, size)
+        chunk_data = read_chunk_from_datanode(datanode_address, file_id, chunk_id, size)
 
         if chunk_data:
             print("Chunk data:", chunk_data)

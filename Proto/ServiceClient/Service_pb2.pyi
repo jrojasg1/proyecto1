@@ -21,16 +21,14 @@ class WriteResponse(_message.Message):
     def __init__(self, success: bool = ...) -> None: ...
 
 class ReadRequest(_message.Message):
-    __slots__ = ("file_id", "chunk_id", "offset", "size")
+    __slots__ = ("file_id", "chunk_id", "size")
     FILE_ID_FIELD_NUMBER: _ClassVar[int]
     CHUNK_ID_FIELD_NUMBER: _ClassVar[int]
-    OFFSET_FIELD_NUMBER: _ClassVar[int]
     SIZE_FIELD_NUMBER: _ClassVar[int]
     file_id: str
     chunk_id: int
-    offset: int
     size: int
-    def __init__(self, file_id: _Optional[str] = ..., chunk_id: _Optional[int] = ..., offset: _Optional[int] = ..., size: _Optional[int] = ...) -> None: ...
+    def __init__(self, file_id: _Optional[str] = ..., chunk_id: _Optional[int] = ..., size: _Optional[int] = ...) -> None: ...
 
 class ReadResponse(_message.Message):
     __slots__ = ("data", "success")

@@ -12,19 +12,21 @@ import Service_pb2
 import Service_pb2_grpc
 
 app = Flask(__name__)
+
 DATANODE_ID=2
 IP_ADDRESS='localhost'
 PORT=50052
-
+PORT_REST = 20052
 NAMENODE_ADDRESS='localhost:5000'
 
 class DataNode:
-    def __init__(self, datanode_id, datanode_ip_address, datanode_port, namenode_address):
+    def __init__(self, datanode_id, datanode_ip_address, datanode_port, datanode_port_rest, namenode_address):
         self.datanode_id = datanode_id
         self.datanode_ip_address = datanode_ip_address
         self.datanode_port = datanode_port
         self.storage_path = os.path.join(os.getcwd())
         self.namenode_address = namenode_address
+        self.datanode_port_rest = datanode_port_rest
 
         # Iniciar el envío periódico del latido del nodo de datos
         heartbeat_thread = threading.Thread(target=self.send_heartbeat)
@@ -40,8 +42,10 @@ class DataNode:
                 response = requests.post(f'http://{self.namenode_address}/heartbeat', json={
                     'id': self.datanode_id,
                     'address':self.datanode_ip_address + ':' + str(self.datanode_port),
+                    'address_rest': self.datanode_ip_address + ':' + str(self.datanode_port_rest),
                     'capacity': capacity,
-                    'rack':1})
+                    'rack':1
+                    })
                 if response.status_code == 200:
                     print("Heartbeat sent to NameNode.")
                 else:
@@ -89,12 +93,22 @@ class DataNode:
         
         return response
 
-
-
+    @app.route('/ping', methods=['GET'])
+    def ping_datanode():
+        return 'Pong'
+    
+    def run_rest_server(self):
+        app.run(host=self.datanode_ip_address, port=self.datanode_port_rest)
+        
 if __name__ == '__main__':
     datanode_id = DATANODE_ID
     datanode_ip_address = IP_ADDRESS
     datanode_port = PORT
+    datanode_port_rest = PORT_REST
     namenode_address = NAMENODE_ADDRESS
-    data_node = DataNode(datanode_id, datanode_ip_address, datanode_port, namenode_address)
+
+    data_node = DataNode(datanode_id, datanode_ip_address, datanode_port, datanode_port_rest, namenode_address)
+    rest_thread = threading.Thread(target=data_node.run_rest_server)
+
+    rest_thread.start()
     data_node.serve()

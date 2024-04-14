@@ -1,0 +1,7 @@
+               request = Service_pb2.WriteRequest(file_id=file_id, chunk_id=chunk_id, data=chunk_data)
+                response = stub.WriteData(request)
+                if response.success:
+                    print(f"Chunk {chunk_id} enviado con éxito al DataNode.")
+                else:
+                    print(f"Fallo al enviar el Chunk {chunk_id} al DataNode.")
+                chunk_id += 1
