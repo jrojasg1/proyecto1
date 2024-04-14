@@ -2,19 +2,29 @@ import grpc
 import requests
 import sys
 import os
+import random
 sys.path.append('../Proto/ServiceClient')
 import Service_pb2
 import Service_pb2_grpc
 
 CHUNK_SIZE = 400
 
-def write_file(datanode_address, file_path, file_id):
+def write_file(file_path, file_id):
     try:
-        channel = grpc.insecure_channel(datanode_address)
-        stub = Service_pb2_grpc.DatanodeServiceStub(channel)
         with open(file_path, 'rb') as file:
             chunk_id = 0
             while True:
+                datanode_info = get_datanode_address()
+                print(datanode_info)
+                if datanode_info:
+                    datanode_address = datanode_info["address"]
+                    print(f"DataNode seleccionado: Dirección {datanode_address}")
+                else:
+                    print("No se pudo obtener información del DataNode del servidor NameNode")
+                    return False
+                
+                channel = grpc.insecure_channel(datanode_address)
+                stub = Service_pb2_grpc.DatanodeServiceStub(channel)
                 chunk_data = file.read(CHUNK_SIZE)
                 if not chunk_data:
                     break
@@ -53,21 +63,15 @@ def get_datanode_address():
     
 def read_chunk_from_datanode(datanode_address, file_id, chunk_id, size):
     try:
-        # Conectar al DataNode
         channel = grpc.insecure_channel(datanode_address)
         stub = Service_pb2_grpc.DatanodeServiceStub(channel)
-
-        # Crear la solicitud de lectura
         read_request = Service_pb2.ReadRequest(
             file_id=file_id,
             chunk_id=chunk_id,
             size=size
         )
 
-        # Enviar la solicitud de lectura al DataNode
         response = stub.ReadData(read_request)
-
-        # Verificar si la solicitud fue exitosa y devolver los datos del chunk
         if response.success:
             return response.data
         else:
@@ -77,54 +81,29 @@ def read_chunk_from_datanode(datanode_address, file_id, chunk_id, size):
         print(f"Error communicating with DataNode: {e}")
         return None
 
-def get_chunk_paths_from_namenode(datanode_address, file_id):
-    if datanode_address:
-        response = requests.get(f'http://localhost:5000/chunk?file_id={file_id}')
-        if response.status_code == 200:
-            return response.json()
-        else:
-            print("Error al obtener las rutas de los chunks del NameNode.")
-            return None
-    else:
-        print("No se pudo obtener información del DataNode del servidor NameNode")
-        return None
-    
 def main():
     print("1. Escribir archivo")
     print("2. Leer archivo")
     option = input("Seleccione una opción: ")
 
     if option == '1':
-        # Get DataNode address from NameNode
-        datanode_info = get_datanode_address()
-        print('datanode_info: ', datanode_info)
-        if datanode_info:
-            datanode_id = datanode_info["id"]
-            datanode_address = datanode_info["address"]
-            print(f"DataNode seleccionado: ID {datanode_id}, Dirección {datanode_address}")
-        else:
-            print("No se pudo obtener información del DataNode del servidor NameNode")
-            return
         # Pedir al usuario el file_path y file_id
         file_path = input("Ingrese la ruta del archivo: ")
         file_id = input("Ingrese el ID del archivo: ")
-        write_success = write_file(datanode_address, file_path, file_id)
+        write_success = write_file(file_path, file_id)
         if write_success:
             print("File successfully written to DataNode")
-            
         else:
             print("Failed to write file to DataNode")
 
     elif option == '2':
         # Pedir al usuario el file_id
         file_id = input("Ingrese el ID del archivo a leer: ")
-        # Get DataNode address from NameNode
+        # Obtener la dirección del DataNode desde el NameNode
         datanode_info = get_datanode_address()
-        print('datanode_info: ', datanode_info)
         if datanode_info:
-            datanode_id = datanode_info["id"]
             datanode_address = datanode_info["address"]
-            print(f"DataNode seleccionado: ID {datanode_id}, Dirección {datanode_address}")
+            print(f"DataNode seleccionado: Dirección {datanode_address}")
         else:
             print("No se pudo obtener información del DataNode del servidor NameNode")
             return
