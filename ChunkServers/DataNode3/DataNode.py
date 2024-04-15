@@ -13,22 +13,22 @@ import Service_pb2_grpc
 
 app = Flask(__name__)
 
-DATANODE_ID = 1
-IP_ADDRESS = 'localhost'
-PORT = 50051
-PORT_REST = 20051
-NAMENODE_ADDRESS = 'localhost:5000'
-DATANODE_REPLICATED= 'localhost:50053'
+DATANODE_ID=3
+IP_ADDRESS='localhost'
+PORT=50053
+PORT_REST = 20053
+NAMENODE_ADDRESS='localhost:5000'
+MASTER = 'localhost:50051'
 
 class DataNode:
-    def __init__(self, datanode_id, datanode_ip_address, datanode_port, datanode_port_rest, namenode_address,datanode_replicated):
+    def __init__(self, datanode_id, datanode_ip_address, datanode_port, datanode_port_rest, namenode_address, datanode_master):
         self.datanode_id = datanode_id
         self.datanode_ip_address = datanode_ip_address
         self.datanode_port = datanode_port
         self.storage_path = os.path.join(os.getcwd())
         self.namenode_address = namenode_address
         self.datanode_port_rest = datanode_port_rest
-        self.datanode_replicated = datanode_replicated
+        self.datanode_master = datanode_master
 
         # Iniciar el envío periódico del latido del nodo de datos
         heartbeat_thread = threading.Thread(target=self.send_heartbeat)
@@ -40,14 +40,15 @@ class DataNode:
         
         while True:
             try:
-                print('capacidad: ', capacity)
+                print('capacidad: ',capacity)
                 response = requests.post(f'http://{self.namenode_address}/heartbeat', json={
                     'id': self.datanode_id,
-                    'address': self.datanode_ip_address + ':' + str(self.datanode_port),
+                    'address':self.datanode_ip_address + ':' + str(self.datanode_port),
                     'address_rest': self.datanode_ip_address + ':' + str(self.datanode_port_rest),
                     'capacity': capacity,
-                    'rack': 1
-                })
+                    'rack':2,
+                    'master':self.datanode_master
+                    })
                 if response.status_code == 200:
                     print("Heartbeat sent to NameNode.")
                 else:
@@ -66,30 +67,8 @@ class DataNode:
         server.add_insecure_port('[::]:'+ str(PORT))
         server.start()
         server.wait_for_termination()
-    
-    def replicate_chunk_to_datanode(self, file_id, chunk_id, data):
-        datanode_address = self.datanode_replicated  # Cambia la dirección según corresponda
-        
-        # Aquí colocarías la lógica para replicar el chunk al otro DataNode
-        channel = grpc.insecure_channel(datanode_address)
-        stub = Service_pb2_grpc.DatanodeServiceStub(channel)
-        
-        # Crea una solicitud gRPC
-        request = Service_pb2.WriteRequest(
-            file_id=file_id,
-            chunk_id=chunk_id,
-            data=data
-        )
-        
-        # Envía la solicitud al DataNode receptor
-        response = stub.WriteData(request)
-        
-        if response.success:
-            print(f"Chunk {chunk_id} replicated to DataNode at {datanode_address}")
-        else:
-            print(f"Error replicating chunk {chunk_id} to DataNode at {datanode_address}")
-
-    def WriteData(self, request, context):
+   
+    def ReplicateChunk(self, request, context):
         file_id = request.file_id
         chunk_id = request.chunk_id
         data = request.data
@@ -99,6 +78,19 @@ class DataNode:
             f.write(data)
         # Replica el chunk a otro DataNode
         self.replicate_chunk_to_datanode(file_id, chunk_id, data)
+        response = Service_pb2.WriteResponse(success=True)
+        print(f"Chunk {chunk_id} saved at {chunk_path}_replicate")
+        
+        return response
+    
+    def WriteData(self, request, context):
+        file_id = request.file_id
+        chunk_id = request.chunk_id
+        data = request.data
+        os.makedirs(os.path.dirname(self.storage_path), exist_ok=True)
+        chunk_path = os.path.join(self.storage_path, f"{file_id}_chunk_{chunk_id}")
+        with open(chunk_path, 'wb') as f:
+            f.write(data)
         response = Service_pb2.WriteResponse(success=True)
         print(f"Chunk {chunk_id} saved at {chunk_path}")
         
@@ -116,25 +108,25 @@ class DataNode:
         else:
             response = Service_pb2.ReadResponse(success=False)
             print(f"Chunk {chunk_id} not found")
+        
         return response
 
     @app.route('/ping', methods=['GET'])
     def ping_datanode():
         return 'Pong'
-
+    
     def run_rest_server(self):
         app.run(host=self.datanode_ip_address, port=self.datanode_port_rest)
-
+        
 if __name__ == '__main__':
-
     datanode_id = DATANODE_ID
     datanode_ip_address = IP_ADDRESS
     datanode_port = PORT
     datanode_port_rest = PORT_REST
     namenode_address = NAMENODE_ADDRESS
-    datanode_replicated = DATANODE_REPLICATED
+    datanode_master = MASTER
 
-    data_node = DataNode(datanode_id, datanode_ip_address, datanode_port, datanode_port_rest, namenode_address,datanode_replicated)
+    data_node = DataNode(datanode_id, datanode_ip_address, datanode_port, datanode_port_rest, namenode_address, datanode_master)
     rest_thread = threading.Thread(target=data_node.run_rest_server)
 
     rest_thread.start()

@@ -64,7 +64,22 @@ class DataNode:
         server.add_insecure_port('[::]:'+ str(PORT))
         server.start()
         server.wait_for_termination()
-
+   
+    def ReplicateChunk(self, request, context):
+        file_id = request.file_id
+        chunk_id = request.chunk_id
+        data = request.data
+        os.makedirs(os.path.dirname(self.storage_path), exist_ok=True)
+        chunk_path = os.path.join(self.storage_path, f"{file_id}_chunk_{chunk_id}")
+        with open(chunk_path, 'wb') as f:
+            f.write(data)
+        # Replica el chunk a otro DataNode
+        self.replicate_chunk_to_datanode(file_id, chunk_id, data)
+        response = Service_pb2.WriteResponse(success=True)
+        print(f"Chunk {chunk_id} saved at {chunk_path}_replicate")
+        
+        return response
+    
     def WriteData(self, request, context):
         file_id = request.file_id
         chunk_id = request.chunk_id

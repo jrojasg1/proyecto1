@@ -1,3 +1,4 @@
+import threading
 import time
 from flask import Flask, jsonify, request
 import requests
@@ -6,13 +7,15 @@ app = Flask(__name__)
 
 
 datanodes_info = {}
+datanodes_info_replicated = {}
 chunk_paths = {}
+max_inactive_time = 10
 
 @app.route('/datanodes', methods=['GET'])
 def get_datanode_info():
     try:
         response = requests.get('http://localhost:5000/ping')
-        print(f'paths {chunk_paths}')
+        print(f'paths:  {datanodes_info}')
         if response.status_code == 200:
             datanode = response.json()
             datanode_fastest = datanode['fastest_datanode']
@@ -42,13 +45,31 @@ def register_datanode():
     datanode_capacity = data.get('capacity')
     datanode_rack = data.get('rack')
     datanode_address_rest = data.get('address_rest')
-    datanodes_info[datanode_id] = {
-        'id': datanode_id,
-        'address': datanode_address,
-        'address_rest': datanode_address_rest,
-        'capacity': datanode_capacity,
-        'rack': datanode_rack
-    }
+    datanode_master = data.get('master')
+    last_heartbeat = time.time()  # Marca de tiempo del último heartbeat
+    
+    if datanode_rack == 1:
+        datanodes_info[datanode_id] = {
+            'id': datanode_id,
+            'address': datanode_address,
+            'address_rest': datanode_address_rest,
+            'capacity': datanode_capacity,
+            'rack': datanode_rack,
+            'last_heartbeat': last_heartbeat,
+            'status': 'active'
+        }
+    else:
+        datanodes_info_replicated[datanode_id] = {
+            'id': datanode_id,
+            'address': datanode_address,
+            'address_rest': datanode_address_rest,
+            'capacity': datanode_capacity,
+            'rack': datanode_rack,
+            'master': datanode_master,
+            'last_heartbeat': last_heartbeat,
+            'status': 'active'
+        }
+
     return jsonify({'message': 'DataNode registrado exitosamente'})
 
 # Endpoint para recibir la ruta de un chunk y almacenarla en el NameNode
@@ -90,18 +111,19 @@ def ping_datanode():
         fastest_datanode = None  # Inicializar el datanode más rápido como None
         
         for datanode_id, datanode_info in datanodes_info.items():
-            
-            datanode_address = datanode_info['address_rest']
-            start_time = time.time()
-            response = requests.get(f'http://{datanode_address}/ping')
-            
-            if response.status_code == 200:
-                end_time = time.time()
-                ping_time = end_time - start_time
-                print(f'datanode {datanode_address} ping: {ping_time}')
-                if ping_time < min_ping_time:
-                    min_ping_time = ping_time
-                    fastest_datanode = datanode_id
+            if datanode_info['status'] == 'active':
+          
+                datanode_address = datanode_info['address_rest']
+                start_time = time.time()
+                response = requests.get(f'http://{datanode_address}/ping')
+                
+                if response.status_code == 200:
+                    end_time = time.time()
+                    ping_time = end_time - start_time
+                    print(f'datanode {datanode_address} ping: {ping_time}')
+                    if ping_time < min_ping_time:
+                        min_ping_time = ping_time
+                        fastest_datanode = datanode_id
         if fastest_datanode:
             return jsonify({'fastest_datanode': fastest_datanode, 'ping_time': min_ping_time})
         else:
@@ -110,5 +132,18 @@ def ping_datanode():
         return jsonify({"error": f"Error al hacer ping a los DataNodes: {e}"}), 500
 
 
+def check_datanode_status():
+    # Función para verificar el estado de los DataNodes
+    while True:
+        current_time = time.time()
+        for datanode_id, datanode_info in datanodes_info.items():
+            last_heartbeat_time = datanode_info['last_heartbeat']
+            print('cualquier: ',current_time - last_heartbeat_time)
+            if current_time - last_heartbeat_time > max_inactive_time:
+                datanodes_info[datanode_id]['status'] = 'inactive'
+        time.sleep(10)
+
 if __name__ == '__main__':
+    check_status_thread = threading.Thread(target=check_datanode_status)
+    check_status_thread.start()
     app.run(debug=True)
