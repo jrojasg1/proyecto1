@@ -1,0 +1,10 @@
+", "wb") as file:
+                file.write(data_read)
+            print("Archivo recibido desde el DataNode y guardado como 'archivo_recibido.txt'.")
+        else:
+            print("Error al leer el archivo desde el DataNode.")
+    else:
+        print("Failed to write file to DataNode")
+
+if __name__ == '__main__':
+    main()

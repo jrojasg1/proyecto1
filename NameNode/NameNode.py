@@ -12,7 +12,7 @@ chunk_paths = {}
 def get_datanode_info():
     try:
         response = requests.get('http://localhost:5000/ping')
-        
+        print(f'paths {chunk_paths}')
         if response.status_code == 200:
             datanode = response.json()
             datanode_fastest = datanode['fastest_datanode']
@@ -57,15 +57,31 @@ def register_chunk_path():
     data = request.json
     
     datanode_address = data.get('datanode_address')
-    chunk_path = data.get('chunk_path')
-    # Almacenar la ruta del chunk en la estructura de datos asociada a la dirección del DataNode
-    if datanode_address in chunk_paths:
-        chunk_paths[datanode_address].append(chunk_path)
+    file_id = data.get('file_id')
+    chunk_id = data.get('chunk_id')
+    chunk_info = {
+        'datanode_address':datanode_address,
+        'chunk_id':chunk_id
+    }
+    if file_id in chunk_paths:
+        chunk_paths[file_id].append(chunk_info)
     else:
-        chunk_paths[datanode_address] = [chunk_path]
+        chunk_paths[file_id] = [chunk_info]
     print('chunk_paths: ', chunk_paths)
     return jsonify({'message': 'Ruta del chunk almacenada exitosamente'})
 
+@app.route('/chunk', methods=['GET'])
+def get_chunk_paths():
+    file_id = request.args.get('file_id')
+    
+    if file_id:
+        if file_id in chunk_paths:
+            return jsonify(chunk_paths[file_id])
+        else:
+            return jsonify({"error": f"No se encontraron chunks para el archivo con ID {file_id}"}), 404
+    else:
+        return jsonify({"error": "Se requiere el parámetro 'file_id'"}), 400
+    
 # Endpoint para hacer ping al DataNode y medir el tiempo de respuesta
 @app.route('/ping', methods=['GET'])
 def ping_datanode():

@@ -1,0 +1,13 @@
+  # Define file path and ID
+    file_path = 'yo.txt'
+    file_id = "example_file_2"
+
+    # Write file to DataNode
+    write_success = write_file(stub, file_path, file_id)
+    if write_success:
+        print("File successfully written to DataNode")
+
+        # Read file from DataNode
+        data_read = read_file(stub, file_id, 0, 18)
+        if data_read:
+            with open("archivo_recibido.txt

@@ -32,7 +32,7 @@ def write_file(file_path, file_id):
                 response = stub.WriteData(request)
                 if response.success:
                     print(f"Chunk {chunk_id} enviado con éxito al DataNode.")
-                    send_chunk_path_to_namenode(datanode_address, file_id, f"{file_id}_chunk_{chunk_id}")
+                    send_chunk_path_to_namenode(datanode_address, file_id, chunk_id)
                 else:
                     print(f"Fallo al enviar el Chunk {chunk_id} al DataNode.")
                 chunk_id += 1
@@ -44,9 +44,9 @@ def write_file(file_path, file_id):
         print("Error:", e)
         return False
 
-def send_chunk_path_to_namenode(datanode_address, file_id, chunk_path):
+def send_chunk_path_to_namenode(datanode_address, file_id, chunk_id):
     try:
-        response = requests.post('http://localhost:5000/chunk', json={'datanode_address': datanode_address, 'file_id': file_id, 'chunk_path': chunk_path})
+        response = requests.post('http://localhost:5000/chunk', json={'datanode_address': datanode_address, 'file_id': file_id, 'chunk_id': chunk_id})
         if response.status_code == 200:
             print("Ruta del chunk enviada al NameNode.")
         else:
@@ -59,6 +59,18 @@ def get_datanode_address():
     if response.status_code == 200:
         return response.json()
     else:
+        return None
+
+def get_chunk_paths_from_namenode(file_id):
+    try:
+        response = requests.get(f'http://localhost:5000/chunk?file_id={file_id}')
+        if response.status_code == 200:
+            return response.json()
+        else:
+            print("Error al obtener las rutas de los chunks del NameNode.")
+            return None
+    except requests.exceptions.RequestException as e:
+        print("Error en la solicitud al NameNode:", e)
         return None
     
 def read_chunk_from_datanode(datanode_address, file_id, chunk_id, size):
@@ -97,26 +109,22 @@ def main():
             print("Failed to write file to DataNode")
 
     elif option == '2':
-        # Pedir al usuario el file_id
         file_id = input("Ingrese el ID del archivo a leer: ")
-        # Obtener la dirección del DataNode desde el NameNode
-        datanode_info = get_datanode_address()
-        if datanode_info:
-            datanode_address = datanode_info["address"]
-            print(f"DataNode seleccionado: Dirección {datanode_address}")
-        else:
-            print("No se pudo obtener información del DataNode del servidor NameNode")
-            return
-        chunk_id = 0  # ID del chunk
-        size = CHUNK_SIZE  # Tamaño de los datos a leer
+        output_file_path = f"{file_id}_output_file"
 
-        # Llamar a la función para leer el chunk del DataNode
-        chunk_data = read_chunk_from_datanode(datanode_address, file_id, chunk_id, size)
+        with open(output_file_path, "wb") as output_file:
+            chunk_paths = get_chunk_paths_from_namenode(file_id)
+            for chunk_path in chunk_paths:
+                chunk_id = chunk_path["chunk_id"]
+                datanode_address = chunk_path["datanode_address"]
+                chunk_data = read_chunk_from_datanode(datanode_address, file_id, chunk_id, CHUNK_SIZE)
+                if chunk_data:
+                    output_file.write(chunk_data)
+                    print(f"Chunk {chunk_id} written to output file.")
+                else:
+                    print(f"Failed to read chunk {chunk_id} from DataNode.")
 
-        if chunk_data:
-            print("Chunk data:", chunk_data)
-        else:
-            print("Failed to read chunk from DataNode.")
+        print("All chunks have been written to the output file:", output_file_path)
 
     else:
         print("Opción inválida.")
