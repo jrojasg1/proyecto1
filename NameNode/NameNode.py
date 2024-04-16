@@ -15,7 +15,7 @@ max_inactive_time = 10
 def get_datanode_info():
     try:
         response = requests.get('http://localhost:5000/ping')
-        print(f'paths:  {datanodes_info}')
+        
         if response.status_code == 200:
             datanode = response.json()
             datanode_fastest = datanode['fastest_datanode']
@@ -109,8 +109,9 @@ def ping_datanode():
     try:
         min_ping_time = float('inf')  # Inicializar el tiempo de ping mínimo como infinito
         fastest_datanode = None  # Inicializar el datanode más rápido como None
-        
+        print(f'datanodes: {datanodes_info}')
         for datanode_id, datanode_info in datanodes_info.items():
+            print(f'ping: {datanode_info}')
             if datanode_info['status'] == 'active':
           
                 datanode_address = datanode_info['address_rest']
@@ -141,7 +142,28 @@ def check_datanode_status():
             print('cualquier: ',current_time - last_heartbeat_time)
             if current_time - last_heartbeat_time > max_inactive_time:
                 datanodes_info[datanode_id]['status'] = 'inactive'
+                if datanode_info['rack'] == 1:
+                    master_address = datanode_info['address']
+                    # Buscar DataNodes replicados asociados al DataNode master desconectado
+                    for replicated_id, replicated_info in datanodes_info_replicated.items():
+                        if replicated_info['master'] == master_address:
+                            replicated_address = replicated_info['address']
+                            # Agregar el DataNode replicado al diccionario de DataNodes activos
+                            datanodes_info[replicated_id] = replicated_info
+                            update_chunk_paths(master_address,replicated_address)
+                            print(f"DataNode replicado agregado: {replicated_info}")
+                            # Eliminar el DataNode replicado del diccionario de DataNodes replicados
+                            del datanodes_info_replicated[replicated_id]
+                            break  # Salir del bucle una vez que se agregue un replicado
         time.sleep(10)
+
+def update_chunk_paths(master_datanode_addres,datanode_replicated_address):
+    for file_id, chunks in chunk_paths.items():
+                for chunk_info in chunks:
+                    if chunk_info['datanode_address'] == master_datanode_addres:
+                        chunk_info['datanode_address'] = datanode_replicated_address
+            
+    print("Rutas de chunks actualizadas")
 
 if __name__ == '__main__':
     check_status_thread = threading.Thread(target=check_datanode_status)
