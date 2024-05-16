@@ -36,3 +36,6 @@ python DataNode.py
 cd Cliente
 python Client.py
 ```
+## Video
+
+link: https://youtu.be/gIaieyDa8Ps
